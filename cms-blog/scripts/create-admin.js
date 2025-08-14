@@ -41,7 +41,9 @@ const userSchema = new mongoose.Schema({
       'manage_users',
       'manage_emojis',
       'moderate_comments',
-      'view_analytics'
+      'view_analytics',
+      'comment',
+      'react'
     ]
   }],
   isActive: {

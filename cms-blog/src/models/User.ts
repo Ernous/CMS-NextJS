@@ -54,7 +54,9 @@ const userSchema = new mongoose.Schema<IUser>({
       'manage_users',
       'manage_emojis',
       'moderate_comments',
-      'view_analytics'
+      'view_analytics',
+      'comment',
+      'react'
     ]
   }],
   isActive: {
@@ -83,31 +85,31 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Установка прав по умолчанию в зависимости от роли
-userSchema.pre('save', function(next) {
-  if (this.isModified('role')) {
-    switch (this.role) {
-      case 'admin':
-        this.permissions = [
-          'create_post', 'edit_post', 'delete_post', 'publish_post',
-          'manage_users', 'manage_emojis', 'moderate_comments', 'view_analytics'
-        ];
-        break;
-      case 'moderator':
-        this.permissions = [
-          'create_post', 'edit_post', 'publish_post',
-          'moderate_comments', 'view_analytics'
-        ];
-        break;
-      case 'author':
-        this.permissions = ['create_post', 'edit_post', 'publish_post'];
-        break;
-      case 'user':
-        this.permissions = [];
-        break;
+  // Установка прав по умолчанию в зависимости от роли
+  userSchema.pre('save', function(next) {
+    if (this.isModified('role')) {
+      switch (this.role) {
+        case 'admin':
+          this.permissions = [
+            'create_post', 'edit_post', 'delete_post', 'publish_post',
+            'manage_users', 'manage_emojis', 'moderate_comments', 'view_analytics'
+          ];
+          break;
+        case 'moderator':
+          this.permissions = [
+            'create_post', 'edit_post', 'publish_post',
+            'moderate_comments', 'view_analytics'
+          ];
+          break;
+        case 'author':
+          this.permissions = ['create_post', 'edit_post', 'publish_post'];
+          break;
+        case 'user':
+          this.permissions = ['comment', 'react']; // Обычные пользователи могут только комментировать и ставить реакции
+          break;
+      }
     }
-  }
-  next();
-});
+    next();
+  });
 
 export default mongoose.models.User || mongoose.model<IUser>('User', userSchema);

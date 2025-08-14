@@ -60,7 +60,16 @@ export default function Reactions({ postSlug }: ReactionsProps) {
   };
 
   const addReaction = async (emojiShortcode: string) => {
-    if (!user || !token) return;
+    if (!user || !token) {
+      alert('Для добавления реакций необходимо войти в систему');
+      return;
+    }
+
+    // Проверяем права на реакции
+    if (!user.permissions.includes('react')) {
+      alert('У вас нет прав на добавление реакций');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -75,16 +84,29 @@ export default function Reactions({ postSlug }: ReactionsProps) {
 
       if (response.ok) {
         await loadReactions();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Ошибка при добавлении реакции');
       }
     } catch (error) {
       console.error('Error adding reaction:', error);
+      alert('Ошибка при добавлении реакции');
     } finally {
       setLoading(false);
     }
   };
 
   const removeReaction = async (emojiShortcode: string) => {
-    if (!user || !token) return;
+    if (!user || !token) {
+      alert('Для удаления реакций необходимо войти в систему');
+      return;
+    }
+
+    // Проверяем права на реакции
+    if (!user.permissions.includes('react')) {
+      alert('У вас нет прав на удаление реакций');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -97,9 +119,13 @@ export default function Reactions({ postSlug }: ReactionsProps) {
 
       if (response.ok) {
         await loadReactions();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Ошибка при удалении реакции');
       }
     } catch (error) {
       console.error('Error removing reaction:', error);
+      alert('Ошибка при удалении реакции');
     } finally {
       setLoading(false);
     }

@@ -122,7 +122,8 @@ export default function HomePage() {
               <nav className="flex items-center space-x-4">
                 {user ? (
                   <>
-                    {hasPermission('create_post') && (
+                    {/* Кнопка "Новый пост" только для авторов и выше */}
+                    {(user.role === 'admin' || user.role === 'moderator' || user.role === 'author') && (
                       <Link
                         href="/admin/posts/new"
                         className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -144,6 +145,7 @@ export default function HomePage() {
                     <div className="flex items-center space-x-2">
                       <User size={20} className="text-gray-600" />
                       <span className="text-gray-700">{user.username}</span>
+                      <span className="text-xs text-gray-500">({user.role})</span>
                       <button
                         onClick={handleLogout}
                         className="flex items-center space-x-1 px-3 py-1 text-gray-600 hover:text-gray-800 transition-colors"

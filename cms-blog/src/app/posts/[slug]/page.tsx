@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import Reactions from '@/components/Reactions';
+import Comments from '@/components/Comments';
 import { ArrowLeft, User, Calendar, Eye, Edit, Trash2 } from 'lucide-react';
 
 interface Post {
@@ -280,11 +281,16 @@ export default function PostPage({ params }: PostPageProps) {
           )}
 
           {/* Реакции */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Реакции
             </h3>
             <Reactions postSlug={post.slug} />
+          </div>
+
+          {/* Комментарии */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <Comments postSlug={post.slug} />
           </div>
         </article>
       </main>
