@@ -18,10 +18,10 @@
     "lucide-react": "latest",
     "mongodb": "latest",
     "mongoose": "latest",
-    "next": "15.4.6",
+    "next": "latest",
     "next-auth": "latest",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "latest",
+    "react-dom": "latest",
     "react-hook-form": "latest",
     "react-markdown": "latest",
     "remark-gfm": "latest",
@@ -35,9 +35,9 @@
     "@types/react-dom": "latest",
     "autoprefixer": "latest",
     "eslint": "latest",
-    "eslint-config-next": "15.4.6",
+    "eslint-config-next": "latest",
     "postcss": "latest",
-    "tailwindcss": "3.4.14",
+    "tailwindcss": "latest",
     "typescript": "latest"
   }
 }
