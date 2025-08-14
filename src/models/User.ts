@@ -62,6 +62,21 @@ const userSchema = new mongoose.Schema<IUser>({
   isActive: {
     type: Boolean,
     default: true
+  },
+  isBanned: {
+    type: Boolean,
+    default: false
+  },
+  banReason: {
+    type: String,
+    maxlength: 500
+  },
+  bannedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  bannedAt: {
+    type: Date
   }
 }, {
   timestamps: true

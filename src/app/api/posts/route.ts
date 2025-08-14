@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Post from '@/models/Post';
+import UserMute from '@/models/UserMute';
 import { requirePermission } from '@/lib/auth';
 
 // GET - получение списка постов
@@ -66,6 +67,23 @@ export async function GET(request: NextRequest) {
 export const POST = requirePermission('create_post')(async (request: NextRequest, user: any) => {
   try {
     await dbConnect();
+
+    // Проверяем, не забанен ли пользователь
+    if (user.isBanned) {
+      return NextResponse.json(
+        { error: 'Ваш аккаунт заблокирован' },
+        { status: 403 }
+      );
+    }
+
+    // Проверяем, не замучен ли пользователь
+    const canPost = await UserMute.canPost(user._id.toString());
+    if (!canPost) {
+      return NextResponse.json(
+        { error: 'Вы не можете создавать посты в данный момент' },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
     const { title, content, excerpt, status, category, tags, featuredImage, images, videos } = body;

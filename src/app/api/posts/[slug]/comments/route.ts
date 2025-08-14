@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Post from '@/models/Post';
 import Comment from '@/models/Comment';
+import UserMute from '@/models/UserMute';
 import { requireAuth } from '@/lib/auth';
 
 // GET - получение комментариев к посту
@@ -85,6 +86,23 @@ export const POST = requireAuth(async (
     if (!user.permissions.includes('comment')) {
       return NextResponse.json(
         { error: 'У вас нет прав на комментирование' },
+        { status: 403 }
+      );
+    }
+
+    // Проверяем, не забанен ли пользователь
+    if (user.isBanned) {
+      return NextResponse.json(
+        { error: 'Ваш аккаунт заблокирован' },
+        { status: 403 }
+      );
+    }
+
+    // Проверяем, не замучен ли пользователь
+    const canComment = await UserMute.canComment(user._id.toString());
+    if (!canComment) {
+      return NextResponse.json(
+        { error: 'Вы не можете комментировать в данный момент' },
         { status: 403 }
       );
     }

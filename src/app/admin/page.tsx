@@ -11,7 +11,9 @@ import {
   BarChart3, 
   Settings, 
   Plus,
-  ArrowLeft
+  ArrowLeft,
+  MessageSquare,
+  Globe
 } from 'lucide-react';
 
 interface Stats {
@@ -84,10 +86,17 @@ export default function AdminPage() {
   const adminMenuItems = [
     {
       title: 'Пользователи',
-      description: 'Управление пользователями и ролями',
+      description: 'Управление пользователями, баны и муты',
       icon: Users,
       href: '/admin/users',
       permission: 'manage_users'
+    },
+    {
+      title: 'Модерация комментариев',
+      description: 'Просмотр и удаление комментариев',
+      icon: MessageSquare,
+      href: '/admin/comments',
+      permission: 'moderate_comments'
     },
     {
       title: 'Посты',
@@ -104,18 +113,18 @@ export default function AdminPage() {
       permission: 'manage_emojis'
     },
     {
+      title: 'Настройки сайта',
+      description: 'Название, иконка, цвета и ограничения',
+      icon: Globe,
+      href: '/admin/settings',
+      permission: 'manage_users'
+    },
+    {
       title: 'Аналитика',
       description: 'Статистика и аналитика',
       icon: BarChart3,
       href: '/admin/analytics',
       permission: 'view_analytics'
-    },
-    {
-      title: 'Настройки',
-      description: 'Настройки системы',
-      icon: Settings,
-      href: '/admin/settings',
-      permission: 'manage_users'
     }
   ];
 

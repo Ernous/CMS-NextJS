@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSiteSettings } from '@/contexts/SiteSettingsContext';
 import { Plus, Search, User, LogOut } from 'lucide-react';
 
 interface Post {
@@ -24,6 +25,7 @@ interface Post {
 
 export default function HomePage() {
   const { user, logout, hasPermission } = useAuth();
+  const { settings } = useSiteSettings();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,7 +99,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="text-2xl font-bold text-gray-900">
-              CMS Блог
+              {settings.siteName}
             </Link>
 
             <div className="flex items-center space-x-4">
