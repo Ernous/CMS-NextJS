@@ -27,7 +27,7 @@
 1. **Клонируйте репозиторий**
 ```bash
 git clone <repository-url>
-cd cms-blog
+cd your-project-name
 ```
 
 2. **Установите зависимости**
