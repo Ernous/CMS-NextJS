@@ -18,10 +18,10 @@
     "lucide-react": "latest",
     "mongodb": "latest",
     "mongoose": "latest",
-    "next": "latest",
+    "next": "15.4.6",
     "next-auth": "latest",
-    "react": "latest",
-    "react-dom": "latest",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "react-hook-form": "latest",
     "react-markdown": "latest",
     "remark-gfm": "latest",
@@ -29,12 +29,15 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "latest",
+    "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "autoprefixer": "latest",
     "eslint": "latest",
-    "eslint-config-next": "latest",
-    "tailwindcss": "latest",
+    "eslint-config-next": "15.4.6",
+    "postcss": "latest",
+    "tailwindcss": "3.4.14",
     "typescript": "latest"
   }
 }
