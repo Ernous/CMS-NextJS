@@ -37,12 +37,12 @@ npm install
 
 3. **Настройте MongoDB**
 - Установите MongoDB локально или используйте MongoDB Atlas
-- Создайте базу данных `cms-blog`
+- Создайте базу данных `cms_blog`
 
 4. **Настройте переменные окружения**
 Скопируйте `.env.local.example` в `.env.local` и настройте:
 ```env
-MONGODB_URI=mongodb://localhost:27017/cms-blog
+MONGODB_URI=mongodb://localhost:27017/cms_blog
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 NEXTAUTH_SECRET=your-nextauth-secret-key
 NEXTAUTH_URL=http://localhost:3000

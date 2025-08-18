@@ -16,7 +16,7 @@
 В настройках проекта на Vercel добавьте следующие переменные окружения:
 
 ```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/cms-blog?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/cms_blog?retryWrites=true&w=majority
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 NEXTAUTH_SECRET=your-nextauth-secret-key
 NEXTAUTH_URL=https://your-domain.vercel.app
