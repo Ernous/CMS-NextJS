@@ -2,15 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import UserMute from '@/models/UserMute';
-import { requirePermission } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET - получение мутов пользователя
-export const GET = requirePermission('manage_users')(async (
+export async function GET(
   request: NextRequest,
-  user: any,
-  { params }: { params: { id: string } }
-) => {
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'manage_users')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const mutes = await UserMute.find({ user: params.id })
@@ -27,15 +37,25 @@ export const GET = requirePermission('manage_users')(async (
       { status: 500 }
     );
   }
-});
+}
 
 // POST - создание мута
-export const POST = requirePermission('manage_users')(async (
+export async function POST(
   request: NextRequest,
-  user: any,
-  { params }: { params: { id: string } }
-) => {
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'manage_users')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const { type, reason, duration } = await request.json();
@@ -86,15 +106,25 @@ export const POST = requirePermission('manage_users')(async (
       { status: 500 }
     );
   }
-});
+}
 
 // DELETE - удаление мута
-export const DELETE = requirePermission('manage_users')(async (
+export async function DELETE(
   request: NextRequest,
-  user: any,
-  { params }: { params: { id: string } }
-) => {
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'manage_users')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const { searchParams } = new URL(request.url);
@@ -135,4 +165,4 @@ export const DELETE = requirePermission('manage_users')(async (
       { status: 500 }
     );
   }
-});
+}

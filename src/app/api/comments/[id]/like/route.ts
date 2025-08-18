@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Comment from '@/models/Comment';
-import { requireAuth } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 
 // POST - поставить/убрать лайк комментарию
-export const POST = requireAuth(async (
+export async function POST(
   request: NextRequest,
-  user: any,
-  { params }: { params: { id: string } }
-) => {
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await dbConnect();
 
     const comment = await Comment.findById(params.id);
@@ -52,4 +58,4 @@ export const POST = requireAuth(async (
       { status: 500 }
     );
   }
-});
+}

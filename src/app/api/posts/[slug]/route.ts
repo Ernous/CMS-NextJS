@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Post from '@/models/Post';
-import { requirePermission } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET - получение поста по slug
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const params = await context.params;
     await dbConnect();
 
     const post = await Post.findOne({ slug: params.slug })
@@ -23,9 +24,7 @@ export async function GET(
     }
 
     // Увеличиваем счетчик просмотров
-    await Post.findByIdAndUpdate(post._id, {
-      $inc: { viewCount: 1 }
-    });
+    await Post.findByIdAndUpdate((post as { _id: string })._id, { $inc: { views: 1 } });
 
     return NextResponse.json(post);
 
@@ -39,12 +38,22 @@ export async function GET(
 }
 
 // PUT - обновление поста
-export const PUT = requirePermission('edit_post')(async (
+export async function PUT(
   request: NextRequest,
-  user: any,
-  { params }: { params: { slug: string } }
-) => {
+  context: { params: Promise<{ slug: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'edit_post')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const post = await Post.findOne({ slug: params.slug });
@@ -113,15 +122,25 @@ export const PUT = requirePermission('edit_post')(async (
       { status: 500 }
     );
   }
-});
+}
 
 // DELETE - удаление поста
-export const DELETE = requirePermission('delete_post')(async (
+export async function DELETE(
   request: NextRequest,
-  user: any,
-  { params }: { params: { slug: string } }
-) => {
+  context: { params: Promise<{ slug: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'delete_post')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const post = await Post.findOne({ slug: params.slug });
@@ -141,9 +160,10 @@ export const DELETE = requirePermission('delete_post')(async (
       );
     }
 
+    // Удаляем пост
     await Post.findByIdAndDelete(post._id);
 
-    return NextResponse.json({ message: 'Пост успешно удален' });
+    return NextResponse.json({ message: 'Пост удален' });
 
   } catch (error) {
     console.error('Delete post error:', error);
@@ -152,4 +172,4 @@ export const DELETE = requirePermission('delete_post')(async (
       { status: 500 }
     );
   }
-});
+}

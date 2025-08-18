@@ -2,24 +2,20 @@ import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
 import User from '@/models/User';
 import dbConnect from './mongodb';
+import { AuthenticatedUser, JWTPayload, AuthHandler, PermissionHandler } from '@/types/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-
-export interface JWTPayload {
-  userId: string;
-  role: string;
-}
 
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
     return decoded;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
-export async function getCurrentUser(request: NextRequest) {
+export async function getCurrentUser(request: NextRequest): Promise<AuthenticatedUser | null> {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     
@@ -39,8 +35,8 @@ export async function getCurrentUser(request: NextRequest) {
       return null;
     }
 
-    return user;
-  } catch (error) {
+    return user as AuthenticatedUser;
+  } catch {
     return null;
   }
 }
@@ -49,10 +45,8 @@ export function hasPermission(userPermissions: string[], requiredPermission: str
   return userPermissions.includes(requiredPermission);
 }
 
-export function requireAuth(handler: Function) {
-  return async (request: NextRequest) => {
-    const user = await getCurrentUser(request);
-    
+export function requireAuth(handler: AuthHandler): AuthHandler {
+  return async (request: NextRequest, user: AuthenticatedUser) => {
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -61,11 +55,9 @@ export function requireAuth(handler: Function) {
   };
 }
 
-export function requirePermission(permission: string) {
-  return (handler: Function) => {
-    return async (request: NextRequest) => {
-      const user = await getCurrentUser(request);
-      
+export function requirePermission(permission: string): (handler: AuthHandler) => AuthHandler {
+  return (handler: AuthHandler): AuthHandler => {
+    return async (request: NextRequest, user: AuthenticatedUser, params?: unknown) => {
       if (!user) {
         return Response.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -74,7 +66,7 @@ export function requirePermission(permission: string) {
         return Response.json({ error: 'Forbidden' }, { status: 403 });
       }
       
-      return handler(request, user);
+      return handler(request, user, params);
     };
   };
 }

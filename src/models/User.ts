@@ -9,6 +9,10 @@ export interface IUser extends mongoose.Document {
   role: 'admin' | 'moderator' | 'author' | 'user';
   permissions: string[];
   isActive: boolean;
+  isBanned: boolean;
+  banReason?: string;
+  bannedBy?: mongoose.Types.ObjectId;
+  bannedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;

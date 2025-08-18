@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSiteSettings } from '@/contexts/SiteSettingsContext';
@@ -24,47 +24,40 @@ interface Post {
 }
 
 export default function HomePage() {
-  const { user, logout, hasPermission } = useAuth();
+  const { user, logout } = useAuth();
   const { settings } = useSiteSettings();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    loadPosts();
-  }, [currentPage, searchTerm]);
-
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '10',
-        status: 'published',
+        ...(searchTerm && { search: searchTerm })
       });
-
-      if (searchTerm) {
-        params.append('search', searchTerm);
-      }
 
       const response = await fetch(`/api/posts?${params}`);
       if (response.ok) {
         const data = await response.json();
         setPosts(data.posts);
-        setTotalPages(data.pagination.pages);
+        setTotalPages(data.totalPages);
       }
     } catch (error) {
       console.error('Error loading posts:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm]);
+
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    loadPosts();
   };
 
   const handleLogout = () => {

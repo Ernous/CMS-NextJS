@@ -9,7 +9,6 @@ import {
   FileText, 
   Smile, 
   BarChart3, 
-  Settings, 
   Plus,
   ArrowLeft,
   MessageSquare,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import { Emoji, EmojiPack } from '@/models/Emoji';
-import { requirePermission } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET - получение списка эмодзи
 export async function GET(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const search = searchParams.get('search');
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (pack) {
       query.pack = pack;
@@ -48,8 +48,18 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - создание нового эмодзи
-export const POST = requirePermission('manage_emojis')(async (request: NextRequest, user: any) => {
+export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'manage_emojis')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const body = await request.json();
@@ -109,4 +119,4 @@ export const POST = requirePermission('manage_emojis')(async (request: NextReque
       { status: 500 }
     );
   }
-});
+}

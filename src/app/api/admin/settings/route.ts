@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import SiteSettings from '@/models/SiteSettings';
-import { requirePermission } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET - получение настроек сайта
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await dbConnect();
     
-    const settings = await SiteSettings.getInstance();
+    let settings = await SiteSettings.findOne();
+    if (!settings) {
+      settings = new SiteSettings();
+      await settings.save();
+    }
     return NextResponse.json(settings);
   } catch (error) {
     console.error('Get settings error:', error);
@@ -20,8 +24,18 @@ export async function GET(request: NextRequest) {
 }
 
 // PUT - обновление настроек сайта
-export const PUT = requirePermission('manage_users')(async (request: NextRequest, user: any) => {
+export async function PUT(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'manage_users')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
     
     const body = await request.json();
@@ -37,7 +51,10 @@ export const PUT = requirePermission('manage_users')(async (request: NextRequest
       maxReactionsPerPost
     } = body;
 
-    const settings = await SiteSettings.getInstance();
+    let settings = await SiteSettings.findOne();
+    if (!settings) {
+      settings = new SiteSettings();
+    }
     
     // Обновляем только переданные поля
     if (siteName !== undefined) settings.siteName = siteName;
@@ -60,4 +77,4 @@ export const PUT = requirePermission('manage_users')(async (request: NextRequest
       { status: 500 }
     );
   }
-});
+}

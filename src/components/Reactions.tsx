@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Emoji {
@@ -30,34 +30,34 @@ export default function Reactions({ postSlug }: ReactionsProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadReactions();
-    loadEmojis();
-  }, [postSlug]);
-
-  const loadReactions = async () => {
+  const loadReactions = useCallback(async () => {
     try {
       const response = await fetch(`/api/posts/${postSlug}/reactions`);
       if (response.ok) {
         const data = await response.json();
-        setReactions(data);
+        setReactions(data.reactions);
       }
     } catch (error) {
       console.error('Error loading reactions:', error);
     }
-  };
+  }, [postSlug]);
 
-  const loadEmojis = async () => {
+  const loadEmojis = useCallback(async () => {
     try {
-      const response = await fetch('/api/emojis');
+      const response = await fetch('/api/emoji-packs');
       if (response.ok) {
         const data = await response.json();
-        setAvailableEmojis(data);
+        setAvailableEmojis(data.emojiPacks);
       }
     } catch (error) {
       console.error('Error loading emojis:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadReactions();
+    loadEmojis();
+  }, [loadReactions, loadEmojis]);
 
   const addReaction = async (emojiShortcode: string) => {
     if (!user || !token) {

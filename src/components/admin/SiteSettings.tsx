@@ -78,7 +78,7 @@ export default function SiteSettingsComponent() {
     }
   };
 
-  const handleChange = (field: keyof SiteSettings, value: any) => {
+  const handleChange = (field: keyof SiteSettings, value: unknown) => {
     setSettings(prev => ({
       ...prev,
       [field]: value

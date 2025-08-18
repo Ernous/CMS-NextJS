@@ -11,6 +11,12 @@ export interface IUserMute extends mongoose.Document {
   updatedAt: Date;
 }
 
+interface IUserMuteModel extends mongoose.Model<IUserMute> {
+  getActiveMutes(userId: string): Promise<IUserMute[]>;
+  canComment(userId: string): Promise<boolean>;
+  canPost(userId: string): Promise<boolean>;
+}
+
 const userMuteSchema = new mongoose.Schema<IUserMute>({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -84,4 +90,4 @@ userMuteSchema.statics.canPost = async function(userId: string): Promise<boolean
   return mutes.length === 0;
 };
 
-export default mongoose.models.UserMute || mongoose.model<IUserMute>('UserMute', userMuteSchema);
+export default mongoose.models.UserMute || mongoose.model<IUserMute, IUserMuteModel>('UserMute', userMuteSchema);

@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Comment from '@/models/Comment';
-import { requirePermission } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET - получение всех комментариев для модерации
-export const GET = requirePermission('moderate_comments')(async (request: NextRequest, user: any) => {
+export async function GET(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'moderate_comments')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const { searchParams } = new URL(request.url);
@@ -14,7 +24,7 @@ export const GET = requirePermission('moderate_comments')(async (request: NextRe
     const search = searchParams.get('search');
     const status = searchParams.get('status');
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (search) {
       query.content = { $regex: search, $options: 'i' };
@@ -55,4 +65,4 @@ export const GET = requirePermission('moderate_comments')(async (request: NextRe
       { status: 500 }
     );
   }
-});
+}
