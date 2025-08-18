@@ -12,7 +12,7 @@ npm install
 ### 2. Настройка переменных окружения
 Создайте файл `.env.local`:
 ```env
-MONGODB_URI=mongodb://localhost:27017/cms-blog
+MONGODB_URI=mongodb://localhost:27017/cms_blog
 JWT_SECRET=your-super-secret-jwt-key
 NEXTAUTH_SECRET=your-nextauth-secret-key
 NEXTAUTH_URL=http://localhost:3000
