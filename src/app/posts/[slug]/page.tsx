@@ -72,7 +72,7 @@ export default function PostPage({ params }: PostPageProps) {
     if (slug) {
       loadPost();
     }
-  }, [loadPost]);
+  }, [loadPost, slug]);
 
   const handleDelete = async () => {
     if (!user || !post) return;

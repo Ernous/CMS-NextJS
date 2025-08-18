@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
 import User from '@/models/User';
 import dbConnect from './mongodb';
-import { AuthenticatedUser, JWTPayload, AuthHandler, PermissionHandler } from '@/types/auth';
+import { AuthenticatedUser, JWTPayload, AuthHandler } from '@/types/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 

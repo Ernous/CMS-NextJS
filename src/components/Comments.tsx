@@ -36,7 +36,6 @@ export default function Comments({ postSlug }: CommentsProps) {
       if (response.ok) {
         const data = await response.json();
         setComments(data.comments);
-        setTotalPages(data.totalPages);
       }
     } catch (error) {
       console.error('Error loading comments:', error);
