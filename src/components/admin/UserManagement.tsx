@@ -1,17 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Users, 
   Search, 
   Ban, 
   Unlock, 
-  UserCheck, 
-  UserX, 
   Volume2, 
   VolumeX,
-  MoreVertical,
   Clock
 } from 'lucide-react';
 
@@ -62,38 +59,36 @@ export default function UserManagementComponent() {
     duration: 60
   });
 
-  useEffect(() => {
-    loadUsers();
-  }, [currentPage, searchTerm, roleFilter, statusFilter]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '20'
+        limit: '10',
+        ...(searchTerm && { search: searchTerm }),
+        ...(roleFilter && { role: roleFilter }),
+        ...(statusFilter && { status: statusFilter })
       });
-
-      if (searchTerm) params.append('search', searchTerm);
-      if (roleFilter) params.append('role', roleFilter);
-      if (statusFilter) params.append('status', statusFilter);
 
       const response = await fetch(`/api/admin/users?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
-        setTotalPages(data.pagination.pages);
+        setTotalPages(data.totalPages);
       }
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, roleFilter, statusFilter, token]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   const handleUserAction = async (userId: string, action: string, reason?: string) => {
     try {
@@ -431,7 +426,7 @@ export default function UserManagementComponent() {
                 </label>
                 <select
                   value={muteForm.type}
-                  onChange={(e) => setMuteForm(prev => ({ ...prev, type: e.target.value as any }))}
+                  onChange={(e) => setMuteForm(prev => ({ ...prev, type: e.target.value as 'comment' | 'post' | 'all' }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="comment">Комментарии</option>

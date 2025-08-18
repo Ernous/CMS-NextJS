@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Comment from '@/models/Comment';
-import { requirePermission } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // DELETE - удаление комментария администратором
-export const DELETE = requirePermission('moderate_comments')(async (
+export async function DELETE(
   request: NextRequest,
-  user: any,
-  { params }: { params: { id: string } }
-) => {
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'moderate_comments')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const comment = await Comment.findById(params.id);
@@ -39,4 +49,4 @@ export const DELETE = requirePermission('moderate_comments')(async (
       { status: 500 }
     );
   }
-});
+}

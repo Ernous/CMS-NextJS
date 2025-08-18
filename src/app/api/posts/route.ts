@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Post from '@/models/Post';
 import UserMute from '@/models/UserMute';
-import { requirePermission } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET - получение списка постов
 export async function GET(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const search = searchParams.get('search');
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     // Фильтр по статусу
     if (status !== 'all') {
@@ -64,8 +64,18 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - создание нового поста
-export const POST = requirePermission('create_post')(async (request: NextRequest, user: any) => {
+export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'create_post')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     // Проверяем, не забанен ли пользователь
@@ -77,8 +87,13 @@ export const POST = requirePermission('create_post')(async (request: NextRequest
     }
 
     // Проверяем, не замучен ли пользователь
-    const canPost = await UserMute.canPost(user._id.toString());
-    if (!canPost) {
+    const mutes = await UserMute.find({
+      user: user._id,
+      isActive: true,
+      expiresAt: { $gt: new Date() },
+      type: { $in: ['post', 'all'] }
+    });
+    if (mutes.length > 0) {
       return NextResponse.json(
         { error: 'Вы не можете создавать посты в данный момент' },
         { status: 403 }
@@ -115,14 +130,14 @@ export const POST = requirePermission('create_post')(async (request: NextRequest
 
     const post = new Post({
       title,
-      slug,
       content,
-      excerpt: excerpt || content.substring(0, 300),
+      excerpt: excerpt || '',
+      slug,
       author: user._id,
       status: status || 'draft',
       category: category || 'general',
       tags: tags || [],
-      featuredImage,
+      featuredImage: featuredImage || '',
       images: images || [],
       videos: videos || []
     });
@@ -142,4 +157,4 @@ export const POST = requirePermission('create_post')(async (request: NextRequest
       { status: 500 }
     );
   }
-});
+}

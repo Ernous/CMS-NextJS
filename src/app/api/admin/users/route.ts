@@ -2,11 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import UserMute from '@/models/UserMute';
-import { requirePermission } from '@/lib/auth';
+import { getCurrentUser, hasPermission } from '@/lib/auth';
 
 // GET - получение списка пользователей
-export const GET = requirePermission('manage_users')(async (request: NextRequest, user: any) => {
+export async function GET(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'manage_users')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const { searchParams } = new URL(request.url);
@@ -16,7 +26,7 @@ export const GET = requirePermission('manage_users')(async (request: NextRequest
     const role = searchParams.get('role');
     const status = searchParams.get('status');
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (search) {
       query.$or = [
@@ -53,7 +63,11 @@ export const GET = requirePermission('manage_users')(async (request: NextRequest
     // Получаем активные муты для каждого пользователя
     const usersWithMutes = await Promise.all(
       users.map(async (user) => {
-        const mutes = await UserMute.getActiveMutes(user._id.toString());
+        const mutes = await UserMute.find({
+          user: user._id,
+          isActive: true,
+          expiresAt: { $gt: new Date() }
+        }).populate('mutedBy', 'username');
         return {
           ...user,
           activeMutes: mutes
@@ -78,11 +92,21 @@ export const GET = requirePermission('manage_users')(async (request: NextRequest
       { status: 500 }
     );
   }
-});
+}
 
 // POST - бан/разбан пользователя
-export const POST = requirePermission('manage_users')(async (request: NextRequest, user: any) => {
+export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    if (!hasPermission(user.permissions, 'manage_users')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await dbConnect();
 
     const { userId, action, reason } = await request.json();
@@ -141,4 +165,4 @@ export const POST = requirePermission('manage_users')(async (request: NextReques
       { status: 500 }
     );
   }
-});
+}

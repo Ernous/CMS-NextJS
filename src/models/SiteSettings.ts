@@ -14,6 +14,10 @@ export interface ISiteSettings extends mongoose.Document {
   updatedAt: Date;
 }
 
+interface ISiteSettingsModel extends mongoose.Model<ISiteSettings> {
+  getInstance(): Promise<ISiteSettings>;
+}
+
 const siteSettingsSchema = new mongoose.Schema<ISiteSettings>({
   siteName: {
     type: String,
@@ -66,4 +70,4 @@ siteSettingsSchema.statics.getInstance = async function() {
   return settings;
 };
 
-export default mongoose.models.SiteSettings || mongoose.model<ISiteSettings>('SiteSettings', siteSettingsSchema);
+export default mongoose.models.SiteSettings || mongoose.model<ISiteSettings, ISiteSettingsModel>('SiteSettings', siteSettingsSchema);

@@ -3,14 +3,15 @@ import dbConnect from '@/lib/mongodb';
 import Post from '@/models/Post';
 import Reaction from '@/models/Reaction';
 import { Emoji } from '@/models/Emoji';
-import { requireAuth } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET - получение реакций на пост
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const params = await context.params;
     await dbConnect();
 
     const post = await Post.findOne({ slug: params.slug });
@@ -29,6 +30,7 @@ export async function GET(
     // Группируем реакции по эмодзи
     const groupedReactions = reactions.reduce((acc, reaction) => {
       const emojiShortcode = reaction.emoji.shortcode;
+      
       if (!acc[emojiShortcode]) {
         acc[emojiShortcode] = {
           emoji: reaction.emoji,
@@ -36,14 +38,15 @@ export async function GET(
           users: []
         };
       }
-      acc[emojiShortcode].count++;
-      acc[emojiShortcode].users.push({
+      
+      (acc[emojiShortcode] as { count: number; users: Array<{ id: string; username: string; avatar?: string }> }).count++;
+      (acc[emojiShortcode] as { count: number; users: Array<{ id: string; username: string; avatar?: string }> }).users.push({
         id: reaction.user._id,
         username: reaction.user.username,
         avatar: reaction.user.avatar
       });
       return acc;
-    }, {} as any);
+    }, {} as Record<string, unknown>);
 
     return NextResponse.json(groupedReactions);
 
@@ -57,12 +60,18 @@ export async function GET(
 }
 
 // POST - добавление реакции
-export const POST = requireAuth(async (
+export async function POST(
   request: NextRequest,
-  user: any,
-  { params }: { params: { slug: string } }
-) => {
+  context: { params: Promise<{ slug: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await dbConnect();
 
     const post = await Post.findOne({ slug: params.slug });
@@ -128,15 +137,21 @@ export const POST = requireAuth(async (
       { status: 500 }
     );
   }
-});
+}
 
 // DELETE - удаление реакции
-export const DELETE = requireAuth(async (
+export async function DELETE(
   request: NextRequest,
-  user: any,
-  { params }: { params: { slug: string } }
-) => {
+  context: { params: Promise<{ slug: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await dbConnect();
 
     const post = await Post.findOne({ slug: params.slug });
@@ -189,4 +204,4 @@ export const DELETE = requireAuth(async (
       { status: 500 }
     );
   }
-});
+}

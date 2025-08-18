@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -31,7 +31,7 @@ interface Post {
 }
 
 interface PostPageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export default function PostPage({ params }: PostPageProps) {
@@ -39,14 +39,21 @@ export default function PostPage({ params }: PostPageProps) {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [slug, setSlug] = useState<string>('');
 
   useEffect(() => {
-    loadPost();
-  }, [params.slug]);
+    const loadParams = async () => {
+      const { slug: postSlug } = await params;
+      setSlug(postSlug);
+    };
+    loadParams();
+  }, [params]);
 
-  const loadPost = async () => {
+  const loadPost = useCallback(async () => {
+    if (!slug) return;
+    
     try {
-      const response = await fetch(`/api/posts/${params.slug}`);
+      const response = await fetch(`/api/posts/${slug}`);
       if (response.ok) {
         const data = await response.json();
         setPost(data);
@@ -59,7 +66,13 @@ export default function PostPage({ params }: PostPageProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    if (slug) {
+      loadPost();
+    }
+  }, [loadPost, slug]);
 
   const handleDelete = async () => {
     if (!user || !post) return;

@@ -3,14 +3,15 @@ import dbConnect from '@/lib/mongodb';
 import Post from '@/models/Post';
 import Comment from '@/models/Comment';
 import UserMute from '@/models/UserMute';
-import { requireAuth } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET - получение комментариев к посту
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const params = await context.params;
     await dbConnect();
 
     const post = await Post.findOne({ slug: params.slug });
@@ -21,24 +22,31 @@ export async function GET(
       );
     }
 
-    const comments = await Comment.find({ 
-      post: post._id, 
-      parentComment: null, // Только корневые комментарии
-      isApproved: true 
-    })
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+
+    const skip = (page - 1) * limit;
+
+    const comments = await Comment.find({ post: post._id, isApproved: true })
       .populate('author', 'username avatar')
-      .populate({
-        path: 'replies',
-        populate: {
-          path: 'author',
-          select: 'username avatar'
-        },
-        match: { isApproved: true }
-      })
+      .populate('replies')
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-    return NextResponse.json(comments);
+    const total = await Comment.countDocuments({ post: post._id, isApproved: true });
+
+    return NextResponse.json({
+      comments,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
 
   } catch (error) {
     console.error('Get comments error:', error);
@@ -50,12 +58,18 @@ export async function GET(
 }
 
 // POST - создание комментария
-export const POST = requireAuth(async (
+export async function POST(
   request: NextRequest,
-  user: any,
-  { params }: { params: { slug: string } }
-) => {
+  context: { params: Promise<{ slug: string }> }
+) {
   try {
+    const params = await context.params;
+    const user = await getCurrentUser(request);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await dbConnect();
 
     const post = await Post.findOne({ slug: params.slug });
@@ -99,15 +113,20 @@ export const POST = requireAuth(async (
     }
 
     // Проверяем, не замучен ли пользователь
-    const canComment = await UserMute.canComment(user._id.toString());
-    if (!canComment) {
+    const mutes = await UserMute.find({
+      user: user._id,
+      isActive: true,
+      expiresAt: { $gt: new Date() },
+      type: { $in: ['comment', 'all'] }
+    });
+    if (mutes.length > 0) {
       return NextResponse.json(
         { error: 'Вы не можете комментировать в данный момент' },
         { status: 403 }
       );
     }
 
-    const commentData: any = {
+    const commentData: Record<string, unknown> = {
       content: content.trim(),
       author: user._id,
       post: post._id,
@@ -149,4 +168,4 @@ export const POST = requireAuth(async (
       { status: 500 }
     );
   }
-});
+}

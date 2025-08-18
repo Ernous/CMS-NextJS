@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Heart, MessageCircle, User } from 'lucide-react';
 
@@ -25,26 +25,26 @@ export default function Comments({ postSlug }: CommentsProps) {
   const { user, token } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadComments();
-  }, [postSlug]);
 
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       const response = await fetch(`/api/posts/${postSlug}/comments`);
       if (response.ok) {
         const data = await response.json();
-        setComments(data);
+        setComments(data.comments);
       }
     } catch (error) {
       console.error('Error loading comments:', error);
     }
-  };
+  }, [postSlug]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();

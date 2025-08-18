@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   MessageSquare, 
   Search, 
   Trash2, 
   Eye, 
-  User,
-  Calendar,
-  AlertTriangle
+  User
 } from 'lucide-react';
 
 interface Comment {
@@ -41,38 +39,35 @@ export default function CommentModerationComponent() {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
 
-  useEffect(() => {
-    loadComments();
-  }, [currentPage, searchTerm, statusFilter]);
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '20'
+        limit: '10',
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter && { status: statusFilter })
       });
 
-      if (searchTerm) params.append('search', searchTerm);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-
-      // Загружаем комментарии со всех постов
       const response = await fetch(`/api/admin/comments?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-
       if (response.ok) {
         const data = await response.json();
         setComments(data.comments);
-        setTotalPages(data.pagination.pages);
+        setTotalPages(data.totalPages);
       }
     } catch (error) {
       console.error('Error loading comments:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, statusFilter, token]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm('Вы уверены, что хотите удалить этот комментарий?')) {
