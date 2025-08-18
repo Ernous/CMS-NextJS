@@ -27,13 +27,20 @@ export default function HomePage() {
   const { user, logout } = useAuth();
   const { settings } = useSiteSettings();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [loading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const loadPosts = useCallback(async () => {
     try {
+      if (searchTerm) {
+        setSearchLoading(true);
+      } else {
+        setLoading(true);
+      }
+      
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '10',
@@ -48,6 +55,9 @@ export default function HomePage() {
       }
     } catch (error) {
       console.error('Error loading posts:', error);
+    } finally {
+      setLoading(false);
+      setSearchLoading(false);
     }
   }, [currentPage, searchTerm]);
 
@@ -107,9 +117,14 @@ export default function HomePage() {
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors"
+                  disabled={searchLoading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Search size={20} />
+                  {searchLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <Search size={20} />
+                  )}
                 </button>
               </form>
 
@@ -188,12 +203,45 @@ export default function HomePage() {
         </div>
 
         {/* Список постов */}
-        <div className="grid gap-6">
-          {posts.length === 0 ? (
+        {loading ? (
+          <div className="grid gap-6">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="bg-white p-6 rounded-lg shadow animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-6">
+            {posts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">
-                {searchTerm ? 'Посты не найдены' : 'Пока нет постов'}
-              </p>
+              <div className="max-w-md mx-auto">
+                <div className="text-gray-400 mb-4">
+                  <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {searchTerm ? 'Посты не найдены' : 'Пока нет постов'}
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  {searchTerm 
+                    ? 'Попробуйте изменить поисковый запрос'
+                    : 'Будьте первым, кто поделится своими мыслями!'
+                  }
+                </p>
+                {!searchTerm && user && (user.role === 'admin' || user.role === 'moderator' || user.role === 'author') && (
+                  <Link
+                    href="/admin/posts/new"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus size={20} className="mr-2" />
+                    Создать первый пост
+                  </Link>
+                )}
+              </div>
             </div>
           ) : (
             posts.map((post) => (
@@ -245,6 +293,7 @@ export default function HomePage() {
             ))
           )}
         </div>
+        )}
 
         {/* Пагинация */}
         {totalPages > 1 && (
