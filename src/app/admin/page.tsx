@@ -34,13 +34,19 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    if (!user) {
+      router.push('/');
+      return;
+    }
+
+    // Проверяем права администратора
+    if (!hasPermission('manage_users') && user.role !== 'admin') {
       router.push('/');
       return;
     }
 
     loadStats();
-  }, [user, router]);
+  }, [user, router, hasPermission]);
 
   const loadStats = async () => {
     try {
@@ -78,7 +84,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || user.role !== 'admin') {
+  if (!user || (!hasPermission('manage_users') && user.role !== 'admin')) {
     return null;
   }
 

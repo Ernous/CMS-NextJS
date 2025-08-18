@@ -111,17 +111,19 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
         case 'admin':
           this.permissions = [
             'create_post', 'edit_post', 'delete_post', 'publish_post',
-            'manage_users', 'manage_emojis', 'moderate_comments', 'view_analytics'
+            'manage_users', 'manage_emojis', 'moderate_comments', 'view_analytics',
+            'comment', 'react'
           ];
           break;
         case 'moderator':
           this.permissions = [
             'create_post', 'edit_post', 'publish_post',
-            'moderate_comments', 'view_analytics'
+            'moderate_comments', 'view_analytics',
+            'comment', 'react'
           ];
           break;
         case 'author':
-          this.permissions = ['create_post', 'edit_post', 'publish_post'];
+          this.permissions = ['create_post', 'edit_post', 'publish_post', 'comment', 'react'];
           break;
         case 'user':
           this.permissions = ['comment', 'react']; // Обычные пользователи могут только комментировать и ставить реакции
